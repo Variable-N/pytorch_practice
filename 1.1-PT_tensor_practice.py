@@ -83,9 +83,9 @@ z = x1 ** x2
 #other useful tensor application
 
 sum_x = torch.sum(x,dim = 0) #sum
-values, indices = torch.max(x, dim = 0) #max value
-values, indices = torch.min(x, dim = 0) #min value
-abs_x  =torch.abs(x) #Absolute value 
+values, indices = torch.max(x, dim = 0) #max value   Also x.max(dim = 0) does the same thing
+values, indices = torch.min(x, dim = 0) #min value   Also x.min(dim = 0) does the same thing
+abs_x  =torch.abs(x) #Absolute value    
 z = torch.argmax(x,dim=0) #returns index of maximum value
 z = torch.argmin(x,dim=0) #returns index of minimum value
 mean_x = torch.mean(x.float(), dim = 0) #returns mean value, float is required
@@ -96,7 +96,7 @@ z = torch.clamp(x, min = 0, max = 10) #makes all values less than 0 to 0. every 
 
 x = torch.tensor([1,0,1,1,1], dtype = torch.bool)
 z = torch.any(x) #returns true if any of the value is true
-print(z)
+print(z) # True
 z = torch.all(x) #returns true if all of the value are True
-print(z)
+print(z) # True
 
