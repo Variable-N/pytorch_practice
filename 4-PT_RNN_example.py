@@ -11,6 +11,7 @@
 # =========================================================================================================
 
 # Imports
+from msilib import sequence
 import torch
 import torch.nn as nn # All Neural Netowrk Modules, nn.Lineaer, nn.Conv2d, BatchNorm, Loss functions
 import torch.optim as optim # Fir all Optimization algorithms, SGD, Adam, etc.
@@ -23,19 +24,35 @@ import torchvision.transforms as transforms #Transformations we can perform on o
 device = torch.device('cuda' if torch.cuda.is_available else 'cpu')
 
 # Hyperparameters
-input_size = 1
+input_size = 28
+sequence_length = 28
+num_layers = 2
+hidden_size = 256
 num_classes = 10
 learning_rate = 0.001
 batch_size = 64
-num_epoch = 5
+num_epoch = 2
 
 # CREATE a RNN
+class RNN(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, num_classes):
+        super(RNN, self).__init__()
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+        self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first = True)  #Because in our dataset, first dimensions are batches
+        self.fc = nn.Linear(hidden_size*sequence_length, num_classes)
 
+    def forward(self,x):
+        #Set initial hidden and cell states
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device)
 
+        #Forward Prop
+        out, _ = self.rnn(x, h0)
+        out = out.reshape(out.shape[0], -1)  # 64 x 28*256
+        out = self.fc(out)
+        return out
 
-
-
-
+    
 
 # Load Data
 train_dataset = datasets.MNIST(root='datasets/', train = True, transform = transforms.ToTensor(), download=True)
@@ -45,7 +62,7 @@ test_loader = DataLoader(dataset= test_dataset, batch_size = batch_size, shuffle
 
 
 # Initialize network
-model = CNN().to(device)
+model = RNN(input_size, hidden_size, num_layers, num_classes).to(device)
 
 # Loss and Optimizer
 criterion = nn.CrossEntropyLoss()
@@ -55,10 +72,9 @@ optimizer = optim.Adam(model.parameters(), lr = learning_rate)
 for epoch in range(num_epoch):
     for batch_idx, (data, targets) in enumerate(train_loader):
         # Get data to cuda if possible
-        data = data.to(device = device)
+        data = data.to(device = device).squeeze(1)     # MNIST has Nx1x28x28 but RNN expects Nx28x28. so Squeeze(1) will remove the 1.
         targets = targets.to(device = device)
         
-
         #forward
         scores = model(data)
         loss = criterion(scores, targets)
@@ -84,7 +100,7 @@ def check_accuracy(loader, model):
 
     with torch.no_grad():
         for x, y in loader:
-            x = x.to(device = device)
+            x = x.to(device = device).squeeze(1)
             y = y.to(device = device)
 
             scores = model(x)
@@ -101,6 +117,6 @@ check_accuracy(test_loader,model)
 
 # Output 
 # Checking accuracy on training data
-# Got 59242/60000 with accurary 98.73666381835938
+# Got 58243/60000 with accurary 97.07166290283203
 # Checking accuracy on test data
-# Got 9839/10000 with accurary 98.3899917602539
+# Got 9678/10000 with accurary 96.77999877929688
