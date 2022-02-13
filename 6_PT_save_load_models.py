@@ -46,12 +46,16 @@ class CNN(nn.Module):
 
         return x
 
-# FOR TEST
-# model = CNN()
-# x = torch.randn(64,1,28,28)
-# print(x.shape)
-# print(model(x).shape)
-# exit()
+# CHECKPOINT FUNCTIONS
+def save_checkpoint(state, filename = "my_checkpoint.pth.tar"):
+    print("-> Saving checkpoint")
+    torch.save(state, filename)
+
+def load_checkpoint(checkpoint):
+    print("-> Loading checkpoint")
+    model.load_state_dict(checkpoint['state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+
 
 # Set device
 device = torch.device('cuda' if torch.cuda.is_available else 'cpu')
@@ -62,6 +66,7 @@ num_classes = 10
 learning_rate = 0.0001
 batch_size = 64
 num_epoch = 10
+load_model = True
 
 # Load Data
 train_dataset = datasets.MNIST(root='datasets/', train = True, transform = transforms.ToTensor(), download=True)
@@ -77,10 +82,17 @@ model = CNN().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr = learning_rate)
 
+
+if load_model:
+    load_checkpoint(torch.load("my_checkpoint.pth.tar"))
+
 # Train Network
 for epoch in range(num_epoch):
     losses = []
-
+    
+    if epoch % 3 == 0:
+        checkpoint = {'state_dict' : model.state_dict(), 'optimizer': optimizer.state_dict()}
+        save_checkpoint(checkpoint)
     for batch_idx, (data, targets) in enumerate(train_loader):
         # Get data to cuda if possible
         data = data.to(device = device)
